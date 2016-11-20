@@ -41,6 +41,13 @@
     <jar jarfile="${dist}/${modname}.jar" basedir="${build}"/>
   </target>
 
+  <target name="release" depends="dist">
+    <zip destfile="${dist}/${modname}-${version}.zip">
+      <zipfileset dir="." includes="${modname}.properties" fullpath="mods/${modname}.properties"/>
+      <zipfileset dir="${dist}" includes="${modname}.jar" fullpath="mods/${modname}/${modname}.jar"/>
+    </zip>
+  </target>
+
   <target name="install" depends="dist">
     <copy file="${dist}/${modname}.jar" tofile="${wurmdir}/mods/${modname}/${modname}.jar"/>
     <copy file="${modname}.properties" todir="${wurmdir}/mods/"/>
