@@ -1,0 +1,64 @@
+<project name="Draconus Arcanum Wurm Server Module" default="dist" basedir=".">
+
+  <property name="modname" value="draconus"/>
+
+  <property name="src" location="src"/>
+  <property name="build" location="build"/>
+  <property name="dist" location="dist"/>
+
+  <!--
+
+    The local.properties file defines the following:
+
+        wurmdir=/path/to/wurm/server
+
+        keyfile=/path/to/scp/key
+        deployto=user@host:/path/to/wurm/server
+
+  -->
+  <property file="local.properties"/>
+
+  <property name="version" value="0.1"/>
+
+  <path id="dyndeps">
+        <fileset dir="${wurmdir}">
+            <include name="**/*.jar"/>
+        </fileset>
+  </path>
+
+  <target name="compile">
+
+    <mkdir dir="${build}"/>
+
+    <javac srcdir="${src}" destdir="${build}">
+      <classpath refid="dyndeps" />
+    </javac>
+
+  </target>
+
+  <target name="dist" depends="compile">
+    <mkdir dir="${dist}"/>
+    <jar jarfile="${dist}/${modname}.jar" basedir="${build}"/>
+  </target>
+
+  <target name="install" depends="dist">
+    <copy file="${dist}/${modname}.jar" tofile="${wurmdir}/mods/${modname}/${modname}.jar"/>
+    <copy file="${modname}.properties" todir="${wurmdir}/mods/"/>
+  </target>
+
+  <target name="remove" depends="dist">
+    <delete dir="${wurmdir}/mods/${modname}"/>
+    <delete file="${wurmdir}/mods/${modname}.properties"/>
+  </target>
+
+  <target name="push" depends="dist">
+    <scp file="${modname}.properties" keyfile="${keyfile}" todir="${deployto}/mods/" trust="true"/>
+    <scp file="${dist}/${modname}.jar" keyfile="${keyfile}" todir="${deployto}/mods/${modname}/" trust="true"/>
+  </target>
+
+  <target name="clean">
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+  </target>
+    
+</project>
