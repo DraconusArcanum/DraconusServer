@@ -18,7 +18,7 @@
   -->
   <property file="local.properties"/>
 
-  <property name="version" value="0.1"/>
+  <property name="version" value="0.2"/>
 
   <path id="dyndeps">
         <fileset dir="${wurmdir}">

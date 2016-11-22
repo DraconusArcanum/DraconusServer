@@ -34,10 +34,12 @@ import org.gotti.wurmunlimited.modloader.classhooks.HookManager;
 import org.gotti.wurmunlimited.modloader.interfaces.Configurable;
 import org.gotti.wurmunlimited.modloader.interfaces.WurmServerMod;
 import org.gotti.wurmunlimited.modloader.interfaces.ServerStartedListener;
+import org.gotti.wurmunlimited.modloader.interfaces.ItemTemplatesCreatedListener;
 
 import com.wurmonline.server.creatures.ai.ChatManager;
 
 import com.draconusarcanum.wurm.mods.utils.ItemHelper;
+import com.draconusarcanum.wurm.mods.utils.CreatureTool;
 import com.draconusarcanum.wurm.mods.actions.GmProtect;
 import com.draconusarcanum.wurm.mods.allinone.DracoItems;
 
@@ -49,7 +51,9 @@ import com.draconusarcanum.wurm.mods.cmds.CmdGoTo;
 import com.draconusarcanum.wurm.mods.cmds.CmdWoot;
 import com.draconusarcanum.wurm.mods.cmds.CmdAddAff;
 
-public class AllInOne implements WurmServerMod, Configurable, PreInitable, Initable, ServerStartedListener, BehaviourProvider {
+public class AllInOne implements WurmServerMod, Configurable, PreInitable,
+                                 Initable, ServerStartedListener, BehaviourProvider,
+                                 ItemTemplatesCreatedListener {
     
     public static boolean addGmProtect = true;
 
@@ -57,6 +61,10 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable, Inita
     public static boolean gmFullStamina = true;
 
     public static boolean itemHolyBook = true;
+    public static boolean itemNymphPortal = true;
+    public static boolean itemDemonPortal = true;
+
+    public static boolean setUnicornIsHorse = true;
 
     public static boolean stfuNpcs = true;
     public static boolean hidePlayerGodInscriptions = true;
@@ -216,6 +224,10 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable, Inita
             gmFullStamina = Boolean.valueOf( props.getProperty("gmFullStamina","true") );
 
             itemHolyBook = Boolean.valueOf( props.getProperty("itemHolyBook", "true") );
+            itemNymphPortal = Boolean.valueOf( props.getProperty("itemNymphPortal", "true") );
+            itemDemonPortal = Boolean.valueOf( props.getProperty("itemDemonPortal", "true") );
+
+            setUnicornIsHorse = Boolean.valueOf( props.getProperty("setUnicornIsHorse","true") );
 
             stfuNpcs = Boolean.valueOf( props.getProperty("stfuNpcs","true") );
             hidePlayerGodInscriptions = Boolean.valueOf( props.getProperty("hidePlayerGodInscriptions","true") );
@@ -224,6 +236,28 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable, Inita
             logger.log(Level.SEVERE, "Error in configure()", e);
         }
     }
+
+    @Override
+    public void onItemTemplatesCreated() {
+
+        if (itemHolyBook) DracoItems.addHolyBook();
+        if (itemNymphPortal) DracoItems.addNymphPortal();
+        if (itemDemonPortal) DracoItems.addDemonPortal();
+
+        /* allow gifting coins as mission rewards */
+        ItemHelper.makeMissionItem( ItemList.coinIron );
+        ItemHelper.makeMissionItem( ItemList.coinSilver );
+        ItemHelper.makeMissionItem( ItemList.coinGold );
+        ItemHelper.makeMissionItem( ItemList.coinCopperFive );
+        ItemHelper.makeMissionItem( ItemList.coinIronFive );
+        ItemHelper.makeMissionItem( ItemList.coinSilverFive );
+        ItemHelper.makeMissionItem( ItemList.coinGoldFive );
+        ItemHelper.makeMissionItem( ItemList.coinCopperTwenty );
+        ItemHelper.makeMissionItem( ItemList.coinIronTwenty );
+        ItemHelper.makeMissionItem( ItemList.coinSilverTwenty );
+        ItemHelper.makeMissionItem( ItemList.coinGoldTwenty );
+
+    }
     
     @Override
     public void onServerStarted() {
@@ -231,20 +265,7 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable, Inita
 
             if (addGmProtect) ModActions.registerAction(new GmProtect());
 
-            if (itemHolyBook) DracoItems.addHolyBook();
-
-            /* allow gifting coins as mission rewards */
-            ItemHelper.makeMissionItem( ItemList.coinIron );
-            ItemHelper.makeMissionItem( ItemList.coinSilver );
-            ItemHelper.makeMissionItem( ItemList.coinGold );
-            ItemHelper.makeMissionItem( ItemList.coinCopperFive );
-            ItemHelper.makeMissionItem( ItemList.coinIronFive );
-            ItemHelper.makeMissionItem( ItemList.coinSilverFive );
-            ItemHelper.makeMissionItem( ItemList.coinGoldFive );
-            ItemHelper.makeMissionItem( ItemList.coinCopperTwenty );
-            ItemHelper.makeMissionItem( ItemList.coinIronTwenty );
-            ItemHelper.makeMissionItem( ItemList.coinSilverTwenty );
-            ItemHelper.makeMissionItem( ItemList.coinGoldTwenty );
+            /* Make unicorns "horse like" */
 
             // #fillup
             // #sendhome <player>
@@ -261,7 +282,7 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable, Inita
             cmdtool.addWurmCmd( new CmdWoot() );
             cmdtool.addWurmCmd( new CmdAddAff() );
 
-
+            CreatureTool.makeLikeHorse("Unicorn");
 
         } catch (Throwable e) {
             logger.log(Level.SEVERE, "Error in onServerStarted()", e);

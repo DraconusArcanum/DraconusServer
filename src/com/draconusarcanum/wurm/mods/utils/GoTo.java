@@ -6,6 +6,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.wurmonline.server.Players;
+import com.wurmonline.server.Constants;
 import com.wurmonline.server.NoSuchPlayerException;
 
 import com.wurmonline.server.players.Player;
@@ -90,6 +91,39 @@ public class GoTo {
             return false;
         }
 
+    }
+
+    public static boolean sendToXy(Creature actor, int x, int y, int layer, int floor) {
+
+        Communicator comm = actor.getCommunicator();
+
+        try {
+
+            if ( ! isValidTile(x,y) ) {
+                comm.sendNormalServerMessage(String.format("Invalid Tile: %d,%d", x, y));
+                return false;
+            }
+
+            comm.sendNormalServerMessage(String.format("Teleporting To: (%d,%d layer: %d floor: %d)", x, y, layer, floor));
+
+            /* account for crazy rounding / tile float as int behavior */
+            actor.setTeleportPoints((x << 2) + 2,(y << 2) + 2,layer,floor);
+            actor.startTeleporting();
+
+            comm.sendTeleport(false);
+            return true;
+
+        } catch (Throwable e) {
+            logger.log(Level.SEVERE, String.format("sendToXy: %d,%d (%d): ",x,y,layer) + e.toString() );
+        }
+        return false;
+    }
+
+    public static boolean isValidTile(int x, int y) {
+        if ( x >= 0 && y >= 0 && x < 1 << Constants.meshSize && y < 1 << Constants.meshSize) {
+            return true;
+        }
+        return false;
     }
 
     public static boolean sendToHome(Creature actor) {

@@ -26,11 +26,16 @@ public class TweakApiPerms {
         try {
             field = clas.getDeclaredField(fieldName);
         } catch (NoSuchFieldException e) {
-            logger.log(Level.SEVERE,String.format("No Such Field: %s on %s", fieldName, clas.getName()) );
+            logger.log(Level.SEVERE,String.format("setItemField(): No Such Field: %s on %s", fieldName, clas.getName()) );
+            for ( Field oops : clas.getDeclaredFields() ) {
+                String butHas = String.format("has field: %s", oops.getName() );
+                logger.log(Level.INFO,butHas);
+            }
             return false;
         }
 
         field.setAccessible(true);
+
         try {
             field.set(item,valu);
         } catch (IllegalAccessException e) {
@@ -40,6 +45,87 @@ public class TweakApiPerms {
         return true;
 
     }
+
+    public static Object getItemField( Object item, String fieldName ) {
+
+        Field field = null;
+        Class clas = item.getClass();
+
+        try {
+            field = clas.getDeclaredField(fieldName);
+        } catch (NoSuchFieldException e) {
+            logger.log(Level.SEVERE,String.format("getItemField(): No Such Field: %s on %s", fieldName, clas.getName()) );
+            return null;
+        }
+
+        field.setAccessible(true);
+
+        try {
+            return field.get(item);
+        } catch (IllegalAccessException e) {
+            logger.log(Level.SEVERE,"getItemField Illegal: " + fieldName);
+            return null;
+        }
+    }
+
+    public static boolean setClassField(String className, String fieldName, Object item, Object valu ) {
+
+        Field field = null;
+
+        Class clas = classmap.getClass(className);
+        if ( clas == null ) {
+            return false;
+        }
+
+        try {
+            field = clas.getDeclaredField(fieldName);
+        } catch (NoSuchFieldException e) {
+            logger.log(Level.SEVERE,String.format("setItemField(): No Such Field: %s on %s", fieldName, clas.getName()) );
+            for ( Field oops : clas.getDeclaredFields() ) {
+                String butHas = String.format("has field: %s", oops.getName() );
+                logger.log(Level.INFO,butHas);
+            }
+            return false;
+        }
+
+        field.setAccessible(true);
+
+        try {
+            field.set(item,valu);
+        } catch (IllegalAccessException e) {
+            logger.log(Level.SEVERE,"setItemField Illegal: " + fieldName);
+            return false;
+        }
+        return true;
+
+    }
+
+    public static Object getClassField( String className, String fieldName, Object item ) {
+
+        Field field = null;
+
+        Class clas = classmap.getClass(className);
+        if ( clas == null ) {
+            return false;
+        }
+
+        try {
+            field = clas.getDeclaredField(fieldName);
+        } catch (NoSuchFieldException e) {
+            logger.log(Level.SEVERE,String.format("getItemField(): No Such Field: %s on %s", fieldName, clas.getName()) );
+            return null;
+        }
+
+        field.setAccessible(true);
+
+        try {
+            return field.get(item);
+        } catch (IllegalAccessException e) {
+            logger.log(Level.SEVERE,"getItemField Illegal: " + fieldName);
+            return null;
+        }
+    }
+
 
     public static Method getClassMeth(String cname, String mname, String ... params) {
 

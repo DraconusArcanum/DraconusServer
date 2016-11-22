@@ -17,6 +17,7 @@ public class ClassMap {
     public ClassMap() {
         basemap = new HashMap<String,Class>();
         basemap.put("int",int.class);
+        basemap.put("int[]",int[].class);
         basemap.put("float",float.class);
     }
 
