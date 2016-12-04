@@ -17,6 +17,9 @@ import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.Communicator;
 import com.wurmonline.server.creatures.CreatureStatus;
 
+import com.wurmonline.server.spells.Spell;
+import com.wurmonline.server.spells.Spells;
+
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemList;
 
@@ -38,6 +41,7 @@ import org.gotti.wurmunlimited.modloader.interfaces.ItemTemplatesCreatedListener
 
 import com.wurmonline.server.creatures.ai.ChatManager;
 
+import com.draconusarcanum.wurm.mods.utils.SpellTool;
 import com.draconusarcanum.wurm.mods.utils.ItemHelper;
 import com.draconusarcanum.wurm.mods.utils.CreatureTool;
 import com.draconusarcanum.wurm.mods.actions.GmProtect;
@@ -67,7 +71,10 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
     public static boolean setUnicornIsHorse = true;
 
     public static boolean stfuNpcs = true;
+    public static boolean loadFullContainers = true;
     public static boolean hidePlayerGodInscriptions = true;
+
+    public static String noCooldownSpells = "";
 
     public CmdTool cmdtool = null;
 
@@ -189,6 +196,32 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
 
             });
 
+            if ( loadFullContainers ) {
+
+                hooks.registerHook("com.wurmonline.server.behaviours.CargoTransportationMethods",
+                                   "targetIsNotEmptyContainerCheck",
+                                   "(Lcom/wurmonline/server/items/Item;Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;Z)Z",
+                                   () -> (proxy, method, args) -> {
+
+                    return false;
+                });
+            }
+
+            /* Fix for a bug introduced by NPCs being near papyrus with missions on examine */
+            /*
+            hooks.registerHook("com.wurmonline.server.questions.Questions",
+                               "addQuestion",
+                               "(Lcom/wurmonline/server/questions/Question;)V",
+                               () -> (proxy, method, args) -> {
+
+                if ( !( args[0] instanceof Player ) ) {
+                    return false;
+                }
+
+                return method.invoke(proxy,args);
+            });
+            */
+
             /*
             if ( gmFullStamina ) {
                 hooks.registerHook("com.wurmonline.server.creatures.CreatureStatus",
@@ -228,8 +261,10 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
             itemDemonPortal = Boolean.valueOf( props.getProperty("itemDemonPortal", "true") );
 
             setUnicornIsHorse = Boolean.valueOf( props.getProperty("setUnicornIsHorse","true") );
+            noCooldownSpells = props.getProperty("noCooldownSpells", "");
 
             stfuNpcs = Boolean.valueOf( props.getProperty("stfuNpcs","true") );
+            loadFullContainers = Boolean.valueOf( props.getProperty("loadFullContainers","true") );
             hidePlayerGodInscriptions = Boolean.valueOf( props.getProperty("hidePlayerGodInscriptions","true") );
 
         } catch (Throwable e) {
@@ -283,6 +318,11 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
             cmdtool.addWurmCmd( new CmdAddAff() );
 
             CreatureTool.makeLikeHorse("Unicorn");
+
+            for ( String name : noCooldownSpells.split(",") ) {
+                SpellTool.noSpellCooldown(name);
+            }
+
 
         } catch (Throwable e) {
             logger.log(Level.SEVERE, "Error in onServerStarted()", e);
