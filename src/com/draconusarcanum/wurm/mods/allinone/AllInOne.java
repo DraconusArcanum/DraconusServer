@@ -54,6 +54,7 @@ import com.draconusarcanum.wurm.mods.utils.CmdTool;
 import com.draconusarcanum.wurm.mods.cmds.CmdGoTo;
 import com.draconusarcanum.wurm.mods.cmds.CmdWoot;
 import com.draconusarcanum.wurm.mods.cmds.CmdAddAff;
+import com.draconusarcanum.wurm.mods.cmds.CmdCoffers;
 
 public class AllInOne implements WurmServerMod, Configurable, PreInitable,
                                  Initable, ServerStartedListener, BehaviourProvider,
@@ -316,6 +317,7 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
             cmdtool.addWurmCmd( new CmdGoTo() );
             cmdtool.addWurmCmd( new CmdWoot() );
             cmdtool.addWurmCmd( new CmdAddAff() );
+            cmdtool.addWurmCmd( new CmdCoffers() );
 
             CreatureTool.makeLikeHorse("Unicorn");
 
