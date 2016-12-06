@@ -44,13 +44,17 @@ import com.wurmonline.server.creatures.ai.ChatManager;
 import com.draconusarcanum.wurm.mods.utils.SpellTool;
 import com.draconusarcanum.wurm.mods.utils.ItemHelper;
 import com.draconusarcanum.wurm.mods.utils.CreatureTool;
+
 import com.draconusarcanum.wurm.mods.actions.GmProtect;
+import com.draconusarcanum.wurm.mods.actions.CorpseBounty;
+
 import com.draconusarcanum.wurm.mods.allinone.DracoItems;
 
 import com.draconusarcanum.wurm.contrib.ArgumentTokenizer;
 
 import com.draconusarcanum.wurm.mods.utils.CmdTool;
 
+import com.draconusarcanum.wurm.mods.cmds.CmdCull;
 import com.draconusarcanum.wurm.mods.cmds.CmdGoTo;
 import com.draconusarcanum.wurm.mods.cmds.CmdWoot;
 import com.draconusarcanum.wurm.mods.cmds.CmdAddAff;
@@ -72,6 +76,7 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
     public static boolean setUnicornIsHorse = true;
 
     public static boolean stfuNpcs = true;
+    public static boolean noMineDrift = true;
     public static boolean loadFullContainers = true;
     public static boolean hidePlayerGodInscriptions = true;
 
@@ -208,6 +213,33 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
                 });
             }
 
+            if ( noMineDrift ) {
+
+                hooks.registerHook("com.wurmonline.server.behaviours.TileRockBehaviour",
+                                   "getFloorAndCeiling",
+                                   "(IIIIZZLcom/wurmonline/server/creatures/Creature;)[I",
+                                   () -> (proxy, method, args) -> {
+
+
+                    int baseFloor = (int)args[2] + (int)args[3];
+
+                    int[] ret = (int[]) method.invoke(proxy,args);
+
+                    logger.log(Level.INFO, String.format("getFloorAndCeiling: %d %d", baseFloor, (int)ret[0]));
+
+                    if (ret[0] > baseFloor && ret[0] - baseFloor <= 3 ) {
+                        ret[0] = baseFloor;
+                    }
+
+                    if (ret[0] < baseFloor && baseFloor - ret[0] <= 3 ) {
+                        ret[0] = baseFloor;
+                    }
+
+                    return ret;
+
+                });
+            }
+
             /* Fix for a bug introduced by NPCs being near papyrus with missions on examine */
             /*
             hooks.registerHook("com.wurmonline.server.questions.Questions",
@@ -252,6 +284,8 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
     public void configure(Properties props){
         try {
 
+            CorpseBounty.cashPerCorpse = Long.valueOf( props.getProperty("cashPerCorpse","0") );
+
             addGmProtect = Boolean.valueOf( props.getProperty("addGmProtect","true") );
 
             gmFullFavor = Boolean.valueOf( props.getProperty("gmFullFavor","true") );
@@ -266,6 +300,7 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
 
             stfuNpcs = Boolean.valueOf( props.getProperty("stfuNpcs","true") );
             loadFullContainers = Boolean.valueOf( props.getProperty("loadFullContainers","true") );
+            noMineDrift = Boolean.valueOf( props.getProperty("noMineDrift","true") );
             hidePlayerGodInscriptions = Boolean.valueOf( props.getProperty("hidePlayerGodInscriptions","true") );
 
         } catch (Throwable e) {
@@ -293,6 +328,8 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
         ItemHelper.makeMissionItem( ItemList.coinSilverTwenty );
         ItemHelper.makeMissionItem( ItemList.coinGoldTwenty );
 
+        ItemHelper.makeMissionItem( ItemList.eggSmall );
+
     }
     
     @Override
@@ -300,6 +337,7 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
         try {
 
             if (addGmProtect) ModActions.registerAction(new GmProtect());
+            if (CorpseBounty.cashPerCorpse > 0) ModActions.registerAction(new CorpseBounty());
 
             /* Make unicorns "horse like" */
 
@@ -314,6 +352,7 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
 */
             cmdtool = new CmdTool();
             //cmdtool.addCmdHook();
+            cmdtool.addWurmCmd( new CmdCull() );
             cmdtool.addWurmCmd( new CmdGoTo() );
             cmdtool.addWurmCmd( new CmdWoot() );
             cmdtool.addWurmCmd( new CmdAddAff() );

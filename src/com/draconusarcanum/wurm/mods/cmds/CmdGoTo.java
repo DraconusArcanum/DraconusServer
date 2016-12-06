@@ -2,6 +2,7 @@
 package com.draconusarcanum.wurm.mods.cmds;
 
 import java.lang.String;
+import java.lang.Integer;
 
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.Communicator;
@@ -21,6 +22,12 @@ public class CmdGoTo extends WurmCmd {
 
         if ( argv.length != 2 ) {
             comm.sendNormalServerMessage("usage: #goto <deed|player>");
+            return true;
+        }
+
+        if ( argv[1].matches("^[0-9]+,[0-9]+$") ) {
+            String[] coords = argv[1].split(",");
+            GoTo.sendToXy(actor, Integer.valueOf(coords[0]), Integer.valueOf(coords[1]), 0, 0);
             return true;
         }
 
