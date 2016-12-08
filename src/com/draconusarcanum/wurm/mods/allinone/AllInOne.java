@@ -77,6 +77,7 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
 
     public static boolean stfuNpcs = true;
     public static boolean noMineDrift = true;
+    public static boolean allowTentsOnDeed = true;
     public static boolean loadFullContainers = true;
     public static boolean hidePlayerGodInscriptions = true;
 
@@ -240,6 +241,16 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
                 });
             }
 
+            if ( allowTentsOnDeed ) {
+
+                hooks.registerHook("com.wurmonline.server.behaviours.MethodsItems",
+                                   "mayDropTentOnTile",
+                                   "(Lcom/wurmonline/server/creatures/Creature;)Z",
+                                   () -> (proxy, method, args) -> {
+                    return true;
+                });
+            }
+
             /* Fix for a bug introduced by NPCs being near papyrus with missions on examine */
             /*
             hooks.registerHook("com.wurmonline.server.questions.Questions",
@@ -301,6 +312,7 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
             stfuNpcs = Boolean.valueOf( props.getProperty("stfuNpcs","true") );
             loadFullContainers = Boolean.valueOf( props.getProperty("loadFullContainers","true") );
             noMineDrift = Boolean.valueOf( props.getProperty("noMineDrift","true") );
+            allowTentsOnDeed = Boolean.valueOf( props.getProperty("allowTentsOnDeed","true") );
             hidePlayerGodInscriptions = Boolean.valueOf( props.getProperty("hidePlayerGodInscriptions","true") );
 
         } catch (Throwable e) {
