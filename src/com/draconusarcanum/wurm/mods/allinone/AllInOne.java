@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 
 import java.lang.String;
 import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -16,6 +17,8 @@ import com.wurmonline.server.players.Player;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.Communicator;
 import com.wurmonline.server.creatures.CreatureStatus;
+
+import com.wurmonline.server.behaviours.Actions;
 
 import com.wurmonline.server.spells.Spell;
 import com.wurmonline.server.spells.Spells;
@@ -250,6 +253,35 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
                     return true;
                 });
             }
+
+
+            hooks.registerHook("com.wurmonline.server.structures.Structure",
+                               "isEnemyAllowed",
+                               "(Lcom/wurmonline/server/creatures/Creature;S)Z",
+                               () -> (proxy, method, args) -> {
+
+                short act = (short)args[1];
+                logger.log(Level.INFO, String.format("isEnemyAllowed: %d", act) );
+
+                if ( act >= Actions.actionEntrys.length ) {
+                    return false;
+                }
+
+                return method.invoke(proxy,args);
+            });
+
+            /*
+            hooks.registerHook("com.wurmonline.server.structures.Structure",
+                               "isEnemy",
+                               "(Lcom/wurmonline/server/creatures/Creature;)Z",
+                               () -> (proxy, method, args) -> {
+
+                Object ret = method.invoke(proxy,args);
+                logger.log(Level.INFO, String.format("isEnemy: %s", ret.toString()) );
+                return ret;
+            });
+            */
+
 
             /* Fix for a bug introduced by NPCs being near papyrus with missions on examine */
             /*

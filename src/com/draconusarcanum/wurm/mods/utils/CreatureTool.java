@@ -16,6 +16,8 @@ import java.util.logging.Logger;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 
+import com.wurmonline.server.villages.Villages;
+
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.Creatures;
 import com.wurmonline.server.creatures.CreatureTypes;
@@ -79,9 +81,13 @@ public class CreatureTool {
         return histo;
     }
 
+    public static boolean isOnDeed(Creature target) {
+        return Villages.getVillage( target.getTileX(), target.getTileY(), true) != null;
+    }
+
     public static boolean isOkToDestroy(Creature target) {
-        // NOTE: not done!
-        if ( target.isOnDeed() ) {
+        if (isOnDeed(target)) {
+            logger.log(Level.INFO,"onDeed:" + target.getName());
             return false;
         }
         if ( target.isBranded() ) {
