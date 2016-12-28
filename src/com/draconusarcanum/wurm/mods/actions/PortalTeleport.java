@@ -10,6 +10,7 @@ import com.wurmonline.server.behaviours.Action;
 import com.wurmonline.server.behaviours.ActionEntry;
 import com.wurmonline.server.behaviours.MethodsReligion;
 
+import com.wurmonline.server.players.Player;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.Communicator;
 
@@ -80,6 +81,26 @@ public class PortalTeleport implements ModAction, BehaviourProvider, ActionPerfo
 
     @Override
     public boolean action(Action action, Creature actor, Item source, Item target, short num, float counter) {
+
+        Communicator comm = actor.getCommunicator();
+
+        if ( ! ( actor instanceof Player ) ) {
+            return true;
+        }
+
+        Player player = (Player) actor;
+
+        if ( DracoItems.isHomePortalItem(target) ) {
+
+            String name = player.getVillageName();
+            if ( name.length() == 0 ) {
+                comm.sendNormalServerMessage("You are not a member of a deed.  You have no home to go to...");
+                return true;
+            }
+
+            GoTo.sendToVillage(actor,name);
+            return true;
+        }
 
         int x = target.getData1();
         int y = target.getData2();

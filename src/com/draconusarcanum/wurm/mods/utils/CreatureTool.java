@@ -35,6 +35,7 @@ public class CreatureTool {
         CreatureTemplateFactory fact = CreatureTemplateFactory.getInstance();
         HashMap<String,CreatureTemplate> tmap = (HashMap<String,CreatureTemplate>) TweakApiPerms.getItemField(fact,"templatesByName");
         if ( tmap == null ) {
+            logger.log(Level.INFO, String.format("CreatureTool.getTemplate(%s) -> null", name));
             return null;
         }
         return tmap.get(name);
@@ -46,6 +47,21 @@ public class CreatureTool {
             return false;
         }
         return TweakApiPerms.setClassField("com.wurmonline.server.creatures.CreatureTemplate", fieldName, tmpl, fieldValue);
+    }
+
+    public static boolean makeAlignZero(String name) {
+        logger.log(Level.INFO, "Making Align Zero: " + name);
+        CreatureTemplate tmpl = getTemplate(name);
+        if ( tmpl == null ) {
+            return false;
+        }
+        tmpl.setAlignment(0.0f);
+        return true;
+    }
+
+    public static boolean makeNoAggHuman(String name) {
+        logger.log(Level.INFO, "Making No Agro: " + name);
+        return setTemplateField(name,"aggHuman",false);
     }
 
     public static boolean makeLikeHorse(String creatureName) {

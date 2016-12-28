@@ -11,7 +11,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
+import javassist.CtClass;
+import javassist.CtMethod;
 import javassist.ClassPool;
+import javassist.expr.ExprEditor;
+import javassist.expr.MethodCall;
+import javassist.CannotCompileException;
 
 import com.wurmonline.server.players.Player;
 import com.wurmonline.server.creatures.Creature;
@@ -80,15 +85,23 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
 
     public static boolean stfuNpcs = true;
     public static boolean noMineDrift = true;
+    public static boolean allSurfaceMine = true;
+    public static boolean lampsAutoLight = true;
     public static boolean allowTentsOnDeed = true;
     public static boolean loadFullContainers = true;
     public static boolean hidePlayerGodInscriptions = true;
 
+    public static String makeNonAgro = "";
     public static String noCooldownSpells = "";
 
     public CmdTool cmdtool = null;
 
     public static final Logger logger = Logger.getLogger("DraconusArcanum");
+
+    public static String[] createItemDescs = {
+        "(IFBBJLjava/lang/String;)Lcom/wurmonline/server/items/Item;",
+        "(IFFFFZBBJLjava/lang/String;B)Lcom/wurmonline/server/items/Item;",
+    };
 
     @Override
     public void preInit() {
@@ -254,6 +267,44 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
                 });
             }
 
+            if ( allSurfaceMine ) {
+                hookSurfaceMine(pool);
+            }
+
+
+
+            /* Hook Item Creation */
+
+            for ( String desc : createItemDescs ) {
+
+                //logger.log(Level.INFO,"createItem: " + desc );
+
+                hooks.registerHook("com.wurmonline.server.items.ItemFactory", "createItem", desc, 
+                                   () -> (proxy, method, args ) -> {
+
+                    Object retn = method.invoke(proxy,args);
+                    //logger.log(Level.INFO, "createItem: " + retn.toString() );
+
+                    if ( retn != null ) {
+                        Item item = (Item) retn;
+                        onItemCreated( (Item) retn );
+                    }
+
+                    return retn;
+                });
+            }
+
+            if ( lampsAutoLight ) {
+
+                hooks.registerHook("com.wurmonline.server.items.Item", "refuelLampFromClosestVillage", "()V",
+                                   () -> (proxy, method, args) -> {
+
+                    Item lamp = (Item) proxy;
+                    lamp.setAuxData((byte)100);
+                    return null;
+                });
+            }
+
 
             hooks.registerHook("com.wurmonline.server.structures.Structure",
                                "isEnemyAllowed",
@@ -261,7 +312,7 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
                                () -> (proxy, method, args) -> {
 
                 short act = (short)args[1];
-                logger.log(Level.INFO, String.format("isEnemyAllowed: %d", act) );
+                //logger.log(Level.INFO, String.format("isEnemyAllowed: %d", act) );
 
                 if ( act >= Actions.actionEntrys.length ) {
                     return false;
@@ -323,6 +374,46 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
 
     }
 
+    public void onItemCreated(Item item) {
+        if ( lampsAutoLight ) {
+            if ( item.isStreetLamp() ) {
+                //logger.log(Level.INFO, "createItem() isStreetLamp() == true");
+                item.setAuxData((byte)100);
+                item.setIsAutoLit(true);
+                item.setHasNoDecay(true);
+            }
+        }
+    }
+
+    public void hookSurfaceMine( ClassPool pool ) {
+        try {
+            CtClass tileRockBehav = pool.get("com.wurmonline.server.behaviours.TileRockBehaviour");
+            CtMethod cm = tileRockBehav.getMethod("action", "(Lcom/wurmonline/server/behaviours/Action;Lcom/wurmonline/server/creatures/Creature;Lcom/wurmonline/server/items/Item;IIZIISF)Z");
+
+            cm.instrument(
+                new ExprEditor() {
+                    public void edit(MethodCall m)
+                                  throws CannotCompileException
+                    {
+                        //logger.log(Level.INFO, String.format("MethodCall: %s %s", m.getClassName(), m.getMethodName()));
+                        if ( ! m.getClassName().equals("java.util.Random") ) {
+                            return;
+                        }
+                        if ( ! m.getMethodName().equals("nextInt") ) {
+                            return;
+                        }
+                        // A bit ghetto but...  right now, the nextInt() call we want
+                        // is the only one in the method that calls with nextInt(5)...
+                        m.replace("{ if ( $1 == 5 ) { $_ = 0; } else { $_ = $proceed($$); } }");
+                    }
+                });
+
+        } catch (Throwable e) {
+            logger.log(Level.INFO, "hookSurfaceMine()", e);
+        }
+
+    }
+
     @Override 
     public void configure(Properties props){
         try {
@@ -339,12 +430,15 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
             itemDemonPortal = Boolean.valueOf( props.getProperty("itemDemonPortal", "true") );
 
             setUnicornIsHorse = Boolean.valueOf( props.getProperty("setUnicornIsHorse","true") );
+            makeNonAgro = props.getProperty("makeNonAgro", "");
             noCooldownSpells = props.getProperty("noCooldownSpells", "");
 
             stfuNpcs = Boolean.valueOf( props.getProperty("stfuNpcs","true") );
             loadFullContainers = Boolean.valueOf( props.getProperty("loadFullContainers","true") );
             noMineDrift = Boolean.valueOf( props.getProperty("noMineDrift","true") );
+            lampsAutoLight = Boolean.valueOf( props.getProperty("lampsAutoLight", "true"));
             allowTentsOnDeed = Boolean.valueOf( props.getProperty("allowTentsOnDeed","true") );
+            allSurfaceMine = Boolean.valueOf( props.getProperty("allSurfaceMine","true") );
             hidePlayerGodInscriptions = Boolean.valueOf( props.getProperty("hidePlayerGodInscriptions","true") );
 
         } catch (Throwable e) {
@@ -403,6 +497,11 @@ public class AllInOne implements WurmServerMod, Configurable, PreInitable,
             cmdtool.addWurmCmd( new CmdCoffers() );
 
             CreatureTool.makeLikeHorse("Unicorn");
+
+            for ( String name : makeNonAgro.split(",") ) {
+                CreatureTool.makeAlignZero(name);
+                CreatureTool.makeNoAggHuman(name);
+            }
 
             for ( String name : noCooldownSpells.split(",") ) {
                 SpellTool.noSpellCooldown(name);
